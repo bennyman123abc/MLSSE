@@ -4,6 +4,13 @@ from io import BytesIO
 from os.path import isfile
 from struct import pack, unpack
 from argparse import ArgumentParser
+from textuilib2 import menu, menuItem, displayHeader, setHeader, clear
+import os
+import sys
+import time #debugging purposes
+
+# set menu headers
+setHeader("MLSSEP")
 
 #save file info
 SAVE_FILE_SIZE = 0x12510
@@ -255,7 +262,7 @@ LUIGI_LEVELS = {
     99: 946488  #946498
 }
 
-def xp_to_level(mode: int, xp: int) -> (None, int):
+def xp_to_level(mode, xp):
     levels = None
     if mode == 0:
         levels = MARIO_LEVELS
@@ -275,99 +282,160 @@ def xp_to_level(mode: int, xp: int) -> (None, int):
                 return x
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="A save editor for Mario and Luigi Superstar Saga for 3DS")
+    fileSelect = menu("File Select", [])
+    for file in os.listdir(os.getcwd()):
+        if file.endswith(".sav"):
+            fileSelect.addMenuItem(menuItem(str(file), str(file)))
+            # print(fileSelect.menuItems[0].text)
+            # print(fileSelect.menuItems[0].function)
+            # time.sleep(5)
 
-    #I/O
-    group_required = parser.add_argument_group("required arguments")
-    group_required.add_argument("-i", "--in-file", type=str, required=True, help="The input save file")
-    parser.add_argument("-o", "--out-file", type=str, help="The output save file")
+    backup = menu("File Backup", [menuItem("Backup Save File", "yes"), menuItem("Do Not Backup Save File", "no")])
 
-    #modifications
-    #experience and leveling
-    group_modding = parser.add_argument_group("modifications")
-    group_modding.add_argument("--level", type=int, help="The level you want Mario and Luigi to have")
-    group_modding.add_argument("--mario-level", type=int, help="The level you want Mario to have")
-    group_modding.add_argument("--luigi-level", type=int, help="The level you want Luigi to have")
+    mainMenuItems = [menuItem("View Stats", "view"),
+                     menuItem("Edit Stats", "edit"),
+                     menuItem("Write File", "write"),
+                     menuItem("Quit", "quit")]
+    mainMenu = menu("Main Menu", mainMenuItems)
 
-    #coins
-    group_modding.add_argument("--coins", type=int, help="The amount of coins you want")
+    viewMenuItems = [menuItem("XP", "xp"),
+                     menuItem("Bonuses", "bonuses"),
+                     menuItem("Coins", "coins"),
+                     menuItem("Items", "items"),
+                     menuItem("Beans", "beans"),
+                     menuItem("Back", "back"),
+                     menuItem("Quit", "quit")]
+    viewMenu = menu("View Stats", viewMenuItems)
 
-    #items
-    #mushrooms
-    group_modding.add_argument("--mushrooms", type=int, help="The amount of mushrooms you want")
-    group_modding.add_argument("--super-mushrooms", type=int, help="The amount of super mushrooms you want")
-    group_modding.add_argument("--ultra-mushrooms", type=int, help="The amount of ultra mushrooms you want")
-    group_modding.add_argument("--max-mushrooms", type=int, help="The amount of max mushrooms you want")
-    #nuts
-    group_modding.add_argument("--nuts", type=int, help="The amount of nuts you want")
-    group_modding.add_argument("--super-nuts", type=int, help="The amount of super nuts you want")
-    group_modding.add_argument("--ultra-nuts", type=int, help="The amount of ultra nuts you want")
-    group_modding.add_argument("--max-nuts", type=int, help="The amount of max nuts you want")
-    #syrups
-    group_modding.add_argument("--syrups", type=int, help="The amount of syrups you want")
-    group_modding.add_argument("--super-syrups", type=int, help="The amount of super syrups you want")
-    group_modding.add_argument("--ultra-syrups", type=int, help="The amount of ultra syrups you want")
-    group_modding.add_argument("--max-syrups", type=int, help="The amount of max syrups you want")
-    #1-ups
-    group_modding.add_argument("--one-ups", type=int, help="The amount of 1-ups you want")
-    group_modding.add_argument("--one-up-supers", type=int, help="The amount of 1-up supers you want")
-    #misc
-    group_modding.add_argument("--golden-mushrooms", type=int, help="The amount of golden mushrooms you want")
-    group_modding.add_argument("--refreshing-herbs", type=int, help="The amount of refreshing herbs you want")
-    group_modding.add_argument("--boo-biscuits", type=int, help="The amount of boo biscuits you want")
-    group_modding.add_argument("--red-peppers", type=int, help="The amount of red peppers you want")
-    group_modding.add_argument("--green-peppers", type=int, help="The amount of green peppers you want")
+    editMenu = menu("Edit Stats", viewMenuItems) # viewMenuItems is reused here because it would use the same items anyway
+    editMenu.removeMenuItem(menuItem("Bonuses", "bonuses")) # Bonuses cannot be set
 
-    #beans
-    group_modding.add_argument("--woo-beans", type=int, help="The amount of woo beans you want")
-    group_modding.add_argument("--hoo-beans", type=int, help="The amount of hoo beans you want")
-    group_modding.add_argument("--chuckle-beans", type=int, help="The amount of chuckle beans you want")
-    group_modding.add_argument("--hee-beans", type=int, help="The amount of hee beans you want")
+    xpMenuItems = [menuItem("Set Max XP", "max"),
+                   menuItem("Set XP", "xp"),
+                   menuItem("Back", "back")]
+    xpMenu = menu("Edit XP", xpMenuItems)
+    maxXPMenu = menu("Set Max XP", [])
+    setXPMenu = menu("Set XP", [])
 
-    #maxing
-    group_modding.add_argument("--max-coins", action="store_true", help="Set coins to 999999")
-    group_modding.add_argument("--max-levels", action="store_true", help="Set Mario and Luigi's XP to 999999")
-    group_modding.add_argument("--max-beans", action="store_true", help="Set all beans to 99")
-    group_modding.add_argument("--max-items", action="store_true", help="Set all items to 99")
-    group_modding.add_argument("--max-all", action="store_true", help="Max coins, levels, beans, and items")
+    coinsMenuItems = [menuItem("Set Max Coins", "max"),
+                      menuItem("Set Coins", "coins"),
+                      menuItem("Back", "back")]
+    coinsMenu = menu("Edit Coins", coinsMenuItems)
+    maxCoinsMenu = menu("Set Max Coins", [])
+    setCoinsMenu = menu("Set Coins", [])
+    # parser = ArgumentParser(description="A save editor for Mario and Luigi Superstar Saga for 3DS")
 
-    #listing
-    group_listing = parser.add_argument_group("information")
-    group_listing.add_argument("--list-mario-xp", action="store_true", help="List Mario's current XP")
-    group_listing.add_argument("--list-luigi-xp", action="store_true", help="List Luigi's current XP")
-    group_listing.add_argument("--list-mario-bonuses", action="store_true", help="List Mario's bonus attributes")
-    group_listing.add_argument("--list-luigi-bonuses", action="store_true", help="List Luigi's bonus attributes")
-    group_listing.add_argument("--list-xp", action="store_true", help="List both Mario and Luigi's XP")
-    group_listing.add_argument("--list-coins", action="store_true", help="List your current coins")
-    group_listing.add_argument("--list-items", action="store_true", help="List all items")
-    group_listing.add_argument("--list-beans", action="store_true", help="List all beans")
-    group_listing.add_argument("--list-all", action="store_true", help="List everything")
+    # #I/O
+    # group_required = parser.add_argument_group("required arguments")
+    # group_required.add_argument("-i", "--in-file", type=str, required=True, help="The input save file")
+    # parser.add_argument("-o", "--out-file", type=str, help="The output save file")
 
-    #settings
-    parser.add_argument("--no-backup", action="store_true", help="Disable making a backup of your save")
+    # #modifications
+    # #experience and leveling
+    # group_modding = parser.add_argument_group("modifications")
+    # group_modding.add_argument("--level", type=int, help="The level you want Mario and Luigi to have")
+    # group_modding.add_argument("--mario-level", type=int, help="The level you want Mario to have")
+    # group_modding.add_argument("--luigi-level", type=int, help="The level you want Luigi to have")
 
-    args = parser.parse_args()
+    # #coins
+    # group_modding.add_argument("--coins", type=int, help="The amount of coins you want")
 
-    assert isfile(args.in_file), "Save file not found!"
+    # #items
+    # #mushrooms
+    # group_modding.add_argument("--mushrooms", type=int, help="The amount of mushrooms you want")
+    # group_modding.add_argument("--super-mushrooms", type=int, help="The amount of super mushrooms you want")
+    # group_modding.add_argument("--ultra-mushrooms", type=int, help="The amount of ultra mushrooms you want")
+    # group_modding.add_argument("--max-mushrooms", type=int, help="The amount of max mushrooms you want")
+    # #nuts
+    # group_modding.add_argument("--nuts", type=int, help="The amount of nuts you want")
+    # group_modding.add_argument("--super-nuts", type=int, help="The amount of super nuts you want")
+    # group_modding.add_argument("--ultra-nuts", type=int, help="The amount of ultra nuts you want")
+    # group_modding.add_argument("--max-nuts", type=int, help="The amount of max nuts you want")
+    # #syrups
+    # group_modding.add_argument("--syrups", type=int, help="The amount of syrups you want")
+    # group_modding.add_argument("--super-syrups", type=int, help="The amount of super syrups you want")
+    # group_modding.add_argument("--ultra-syrups", type=int, help="The amount of ultra syrups you want")
+    # group_modding.add_argument("--max-syrups", type=int, help="The amount of max syrups you want")
+    # #1-ups
+    # group_modding.add_argument("--one-ups", type=int, help="The amount of 1-ups you want")
+    # group_modding.add_argument("--one-up-supers", type=int, help="The amount of 1-up supers you want")
+    # #misc
+    # group_modding.add_argument("--golden-mushrooms", type=int, help="The amount of golden mushrooms you want")
+    # group_modding.add_argument("--refreshing-herbs", type=int, help="The amount of refreshing herbs you want")
+    # group_modding.add_argument("--boo-biscuits", type=int, help="The amount of boo biscuits you want")
+    # group_modding.add_argument("--red-peppers", type=int, help="The amount of red peppers you want")
+    # group_modding.add_argument("--green-peppers", type=int, help="The amount of green peppers you want")
 
-    save_data = open(args.in_file, "rb").read()
+    # #beans
+    # group_modding.add_argument("--woo-beans", type=int, help="The amount of woo beans you want")
+    # group_modding.add_argument("--hoo-beans", type=int, help="The amount of hoo beans you want")
+    # group_modding.add_argument("--chuckle-beans", type=int, help="The amount of chuckle beans you want")
+    # group_modding.add_argument("--hee-beans", type=int, help="The amount of hee beans you want")
+
+    # #maxing
+    # group_modding.add_argument("--max-coins", action="store_true", help="Set coins to 999999")
+    # group_modding.add_argument("--max-levels", action="store_true", help="Set Mario and Luigi's XP to 999999")
+    # group_modding.add_argument("--max-beans", action="store_true", help="Set all beans to 99")
+    # group_modding.add_argument("--max-items", action="store_true", help="Set all items to 99")
+    # group_modding.add_argument("--max-all", action="store_true", help="Max coins, levels, beans, and items")
+
+    # #listing
+    # group_listing = parser.add_argument_group("information")
+    # group_listing.add_argument("--list-mario-xp", action="store_true", help="List Mario's current XP")
+    # group_listing.add_argument("--list-luigi-xp", action="store_true", help="List Luigi's current XP")
+    # group_listing.add_argument("--list-mario-bonuses", action="store_true", help="List Mario's bonus attributes")
+    # group_listing.add_argument("--list-luigi-bonuses", action="store_true", help="List Luigi's bonus attributes")
+    # group_listing.add_argument("--list-xp", action="store_true", help="List both Mario and Luigi's XP")
+    # group_listing.add_argument("--list-coins", action="store_true", help="List your current coins")
+    # group_listing.add_argument("--list-items", action="store_true", help="List all items")
+    # group_listing.add_argument("--list-beans", action="store_true", help="List all beans")
+    # group_listing.add_argument("--list-all", action="store_true", help="List everything")
+
+    # #settings
+    # parser.add_argument("--no-backup", action="store_true", help="Disable making a backup of your save")
+
+    # args = parser.parse_args()
+
+    in_file = fileSelect.displayMenu()
+
+    if fileSelect.menuItems == []:
+        print("No save files found!")
+        sys.exit()
+
+    # print(in_file)
+    # time.sleep(5)
+
+    # assert isfile(in_file), "Save file not found!"
+
+    save_data = open(in_file, "rb").read()
     bio = BytesIO(save_data)
 
-    assert len(save_data) == SAVE_FILE_SIZE, "Invalid save file size!"
+    out_file = os.path.splitext(in_file)[0] + ".out.sav"
+
+    if len(save_data) != SAVE_FILE_SIZE:
+        clear()
+        displayHeader(fileSelect)
+        print("Invalid save file size!")
+        sys.exit()
+
+    do_backup = backup.displayMenu()
 
     #backups
-    if not args.no_backup:
+    if do_backup == "yes":
         open("backup.sav", "wb").write(save_data)
 
     #listing
     #mario xp
-    if args.list_mario_xp or args.list_xp or args.list_all:
+    # if args.list_mario_xp or args.list_xp or args.list_all:
+    def marioxp():
         bio.seek(MARIO_XP_LOC)
         mario_xp = unpack("<i", bio.read(4))[0]
         print("Mario XP: %s -> Level: %s" % (mario_xp, xp_to_level(0, mario_xp)))
+        return
 
     #mario bonuses
-    if args.list_mario_bonuses or args.list_all:
+    # if args.list_mario_bonuses or args.list_all:
+    def mariobonuses():
         bio.seek(MARIO_BONUS_HP_LOC)
         print("Mario Bonus HP:     %s" % (unpack("<h", bio.read(2))[0]))
         bio.seek(bio.tell() + 2)
@@ -380,15 +448,19 @@ if __name__ == "__main__":
         print("Mario Bonus SPEED:  %s" % (unpack("<h", bio.read(2))[0]))
         bio.seek(bio.tell() + 2)
         print("Mario Bonus STACHE: %s" % (unpack("<h", bio.read(2))[0]))
+        return
 
     #luigi xp
-    if args.list_luigi_xp or args.list_xp or args.list_all:
+    # if args.list_luigi_xp or args.list_xp or args.list_all:
+    def luigixp():
         bio.seek(LUIGI_XP_LOC)
         luigi_xp = unpack("<i", bio.read(4))[0]
         print("Luigi XP: %s -> Level: %s" % (luigi_xp, xp_to_level(1, luigi_xp)))
+        return
 
     #luigi bonuses
-    if args.list_luigi_bonuses or args.list_all:
+    # if args.list_luigi_bonuses or args.list_all:
+    def luigibonuses():
         bio.seek(LUIGI_BONUS_HP_LOC)
         print("Luigi Bonus HP:     %s" % (unpack("<h", bio.read(2))[0]))
         bio.seek(bio.tell() + 2)
@@ -401,14 +473,18 @@ if __name__ == "__main__":
         print("Luigi Bonus SPEED:  %s" % (unpack("<h", bio.read(2))[0]))
         bio.seek(bio.tell() + 2)
         print("Luigi Bonus STACHE: %s" % (unpack("<h", bio.read(2))[0]))
+        return
 
     #coins
-    if args.list_coins or args.list_all:
+    # if args.list_coins or args.list_all:
+    def coins():
         bio.seek(COINS_LOC)
         print("Coins: %s" % (unpack("<i", bio.read(4))[0]))
+        return
 
     #items
-    if args.list_items or args.list_all:
+    # if args.list_items or args.list_all:
+    def items():
         bio.seek(ITEM_START)
         print("Mushrooms:        %s" % (bio.read(1)[0]))
         print("Super Mushrooms:  %s" % (bio.read(1)[0]))
@@ -433,103 +509,150 @@ if __name__ == "__main__":
         print("Boo Biscuits:     %s" % (bio.read(1)[0]))
         print("Red Peppers:      %s" % (bio.read(1)[0]))
         print("Green Peppers:    %s" % (bio.read(1)[0]))
+        return
 
     #beans
-    if args.list_beans or args.list_all:
+    # if args.list_beans or args.list_all:
+    def beans():
         bio.seek(BEAN_START)
         print("Woo Beans:     %s" % (bio.read(1)[0]))
         print("Hoo Beans:     %s" % (bio.read(1)[0]))
         print("Chuckle Beans: %s" % (bio.read(1)[0]))
         print("Hee Beans:     %s" % (bio.read(1)[0]))
+        return
 
     #modifications
     #max levels
-    if args.max_levels or args.max_all:
+    # if args.max_levels or args.max_all:
+    def setMaxXP():
         bio.seek(MARIO_XP_LOC)
         bio.write(pack("<i", MARIO_LEVELS[99]))
         bio.seek(LUIGI_XP_LOC)
         bio.write(pack("<i", LUIGI_LEVELS[99]))
-    elif args.level is not None and 1 <= args.level <= 99:  #set both levels
+    def setBothXP(lv):
         bio.seek(MARIO_XP_LOC)
-        bio.write(pack("<i", MARIO_LEVELS[args.level]))
+        bio.write(pack("<i", MARIO_LEVELS[lv]))
         bio.seek(LUIGI_XP_LOC)
-        bio.write(pack("<i", LUIGI_LEVELS[args.level]))
-    else: #set xp
+        bio.write(pack("<i", LUIGI_LEVELS[lv]))
+    # else: #set xp
         #mario level
-        if args.mario_level is not None and 1 <= args.mario_level <= 99:
-            bio.seek(MARIO_XP_LOC)
-            bio.write(pack("<i", MARIO_LEVELS[args.mario_level]))
+        # if args.mario_level is not None and 1 <= args.mario_level <= 99:
+    def setMarioXP(lv):
+        bio.seek(MARIO_XP_LOC)
+        bio.write(pack("<i", MARIO_LEVELS[args.mario_level]))
         #luigi level
-        if args.luigi_level is not None and 1 <= args.luigi_level <= 99:
-            bio.seek(LUIGI_XP_LOC)
-            bio.write(pack("<i", LUIGI_LEVELS[args.luigi_level]))
+        # if args.luigi_level is not None and 1 <= args.luigi_level <= 99:
+    def setLuigiXP(lv):
+        bio.seek(LUIGI_XP_LOC)
+        bio.write(pack("<i", LUIGI_LEVELS[args.luigi_level]))
 
     #max money
-    if args.max_coins or args.max_all:
+    # if args.max_coins or args.max_all:
+    def setMaxMoney():
         bio.seek(COINS_LOC)
         bio.write(pack("<i", 999999))
-    elif args.coins is not None and 0 <= args.coins <= 999999:  #set coins
+    # elif args.coins is not None and 0 <= args.coins <= 999999:  #set coins
+    def setMoney(coins):
         bio.seek(COINS_LOC)
-        bio.write(pack("<i", args.coins))
+        bio.write(pack("<i", coins))
 
     #max items
-    if args.max_items or args.max_all:
+    # if args.max_items or args.max_all:
+    def setMaxItems():
         bio.seek(ITEM_START)
         bio.write(bytes([99 for x in range(ITEM_LEN)]))
-    else:  #set items
-        bio.seek(ITEM_START)
-        curr_vals = bytearray(bio.read(ITEM_LEN))
-        items = [
-            #mushrooms
-            args.mushrooms,
-            args.super_mushrooms,
-            args.ultra_mushrooms,
-            args.max_mushrooms,
-            #nuts
-            args.nuts,
-            args.super_nuts,
-            args.ultra_nuts,
-            args.max_nuts,
-            #syrups
-            args.syrups,
-            args.super_syrups,
-            args.ultra_syrups,
-            args.max_syrups,
-            #one ups
-            args.one_ups,
-            args.one_up_supers,
-            #misc
-            args.golden_mushrooms,
-            args.refreshing_herbs,
-            args.boo_biscuits,
-            args.red_peppers,
-            args.green_peppers
-        ]
-        for x in range(len(items)):
-            if items[x] is not None and 0 <= items[x] <= 99:
-                curr_vals[x] = items[x]
-        bio.seek(ITEM_START)
-        bio.write(bytearray(curr_vals))
+    # else:  #set items
+    #     bio.seek(ITEM_START)
+    #     curr_vals = bytearray(bio.read(ITEM_LEN))
+    #     items = [
+    #         #mushrooms
+    #         args.mushrooms,
+    #         args.super_mushrooms,
+    #         args.ultra_mushrooms,
+    #         args.max_mushrooms,
+    #         #nuts
+    #         args.nuts,
+    #         args.super_nuts,
+    #         args.ultra_nuts,
+    #         args.max_nuts,
+    #         #syrups
+    #         args.syrups,
+    #         args.super_syrups,
+    #         args.ultra_syrups,
+    #         args.max_syrups,
+    #         #one ups
+    #         args.one_ups,
+    #         args.one_up_supers,
+    #         #misc
+    #         args.golden_mushrooms,
+    #         args.refreshing_herbs,
+    #         args.boo_biscuits,
+    #         args.red_peppers,
+    #         args.green_peppers
+    #     ]
+    #     for x in range(len(items)):
+    #         if items[x] is not None and 0 <= items[x] <= 99:
+    #             curr_vals[x] = items[x]
+    #     bio.seek(ITEM_START)
+    #     bio.write(bytearray(curr_vals))
 
     #max beans
-    if args.max_beans or args.max_all:
+    # if args.max_beans or args.max_all:
+    def setMaxBeans():
         bio.seek(BEAN_START)
         bio.write(bytes([99 for x in range(BEAN_LEN)]))
-    else:  #set beans
-        bio.seek(BEAN_START)
-        curr_vals = bytearray(bio.read(4))
-        if args.woo_beans is not None and 0 <= args.woo_beans <= 99:
-            curr_vals[0] = args.woo_beans
-        if args.hoo_beans is not None and 0 <= args.hoo_beans <= 99:
-            curr_vals[1] = args.hoo_beans
-        if args.chuckle_beans is not None and 0 <= args.chuckle_beans <= 99:
-            curr_vals[2] = args.chuckle_beans
-        if args.hee_beans is not None and 0 <= args.hee_beans <= 99:
-            curr_vals[3] = args.hee_beans
-        bio.seek(BEAN_START)
-        bio.write(bytearray(curr_vals))
+    # else:  #set beans
+    #     bio.seek(BEAN_START)
+    #     curr_vals = bytearray(bio.read(4))
+    #     if args.woo_beans is not None and 0 <= args.woo_beans <= 99:
+    #         curr_vals[0] = args.woo_beans
+    #     if args.hoo_beans is not None and 0 <= args.hoo_beans <= 99:
+    #         curr_vals[1] = args.hoo_beans
+    #     if args.chuckle_beans is not None and 0 <= args.chuckle_beans <= 99:
+    #         curr_vals[2] = args.chuckle_beans
+    #     if args.hee_beans is not None and 0 <= args.hee_beans <= 99:
+    #         curr_vals[3] = args.hee_beans
+    #     bio.seek(BEAN_START)
+    #     bio.write(bytearray(curr_vals))
 
     out_data = bio.getvalue()
 
-    if args.out_file is not None:
-        open(args.out_file, "wb").write(out_data)
+    def write():
+        open(out_file, "wb").write(out_data)
+        clear()
+        displayHeader(mainMenu)
+        print("File written to '" + out_file + "'")
+
+    def main():
+        op = mainMenu.displayMenu()
+        if op == "view":
+            view()
+        if op == "edit":
+            edit()
+        if op == "write":
+            write()
+        if op == "quit":
+            quit()
+
+    def view():
+        op = viewMenu.displayMenu()
+        if op == "xp":
+            clear()
+            print("MLSSEP - View XP")
+            print('')
+            marioxp()
+            luigixp()
+            time.sleep(5)
+            view()
+        if op == "bonuses":
+            # TODO
+            view()
+
+    def edit():
+        op = editMenu.displayMenu()
+        # TODO
+
+    def quit():
+        sys.exit()
+
+    main()
