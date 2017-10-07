@@ -108,3 +108,13 @@ information:
   --list-beans          List all beans
   --list-all            List everything
 ```
+
+### MLSSEP - Mario and Luigi Superstar Saga Editor Plus
+
+This is an editor for the new 3DS release of Mario and Luigi Superstar Saga.
+
+**BACK UP YOUR SAVES**
+
+You can grab your save using [JKSM](https://gbatemp.net/threads/release-jks-savemanager-homebrew-cia-save-manager.413143/), you want the `ML1_001.sav` file for slot one and `ML1_002.sav` for slot two.
+
+This is a simple text GUI implementation (Requires provided TextUILib2!). Only reason I left the original file is because MLSSEP does **NOT** work with Python 3. TextUILib2 does not support Python 3 and never will unless someone else writes an implementation. Usage is self explanitory.
