@@ -4,7 +4,7 @@ from io import BytesIO
 from os.path import isfile
 from struct import pack, unpack
 from argparse import ArgumentParser
-from textuilib2 import menu, menuItem, displayHeader, setHeader, clear
+from textuilib3 import menu, menuItem, displayHeader, setHeader, clear
 import os
 import sys
 import time #debugging purposes
