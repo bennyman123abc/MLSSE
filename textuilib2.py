@@ -90,11 +90,12 @@ def choice(menu):
     print('')
     print('Choose an Option:')
     try:
-        option = int(input('Option: '))
-        if option-1 < len(menu.menuItems):
-            return menu.menuItems[option-1].function
-        else:
-            raise ValueError("Invalid option!")
+        while True:
+            option = int(input('Option: '))
+            if option-1 < len(menu.menuItems):
+                return menu.menuItems[option-1].function
+            else:
+                print("Invalid option!")
 
     except (KeyboardInterrupt, SystemExit):
         raise
