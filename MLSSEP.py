@@ -399,7 +399,7 @@ if __name__ == "__main__":
     in_file = fileSelect.displayMenu()
 
     if fileSelect.menuItems == []:
-        print("No save files found!")
+        print("No save files found! Place a .sav file into this directory.")
         sys.exit()
 
     # print(in_file)
