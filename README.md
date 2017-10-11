@@ -118,4 +118,4 @@ This is a command-line frontend for MLSSE.
 You can grab your save using [JKSM](https://gbatemp.net/threads/release-jks-savemanager-homebrew-cia-save-manager.413143/), you want the `ML1_001.sav` file for slot one and `ML1_002.sav` for slot two.
 
 This is a simple text GUI implementation (Requires provided TextUILib3!). 
-**NOTE:** Now works with Python 3 thanks to @hilexd
+**NOTE:** Now works with Python 3 thanks to @hlixed
