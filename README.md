@@ -111,7 +111,7 @@ information:
 
 ### MLSSEP - Mario and Luigi Superstar Saga Editor Plus
 
-This is an editor for the new 3DS release of Mario and Luigi Superstar Saga.
+This is a command-line frontend for MLSSE.
 
 **BACK UP YOUR SAVES**
 
